@@ -95,6 +95,25 @@ public class ContainerDefImpl extends ArquillianDescriptorImpl implements Contai
    }
    
    /* (non-Javadoc)
+    * @see org.jboss.arquillian.impl.configuration.api.ContainerDef#setManaged()
+    */
+   @Override
+   public ContainerDef setManaged()
+   {
+      container.attribute("managed", true);
+      return this;
+   }
+   
+   /* (non-Javadoc)
+    * @see org.jboss.arquillian.impl.configuration.api.ContainerDef#isManaged()
+    */
+   @Override
+   public boolean isManaged()
+   {
+      return Boolean.parseBoolean(container.attribute("managed"));
+   }
+   
+   /* (non-Javadoc)
     * @see org.jboss.arquillian.impl.configuration.api.ContainerDescription#dependency(java.lang.String)
     */
    @Override

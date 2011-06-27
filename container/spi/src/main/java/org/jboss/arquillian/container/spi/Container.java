@@ -55,5 +55,14 @@ public interface Container
    boolean hasProtocolConfiguration(ProtocolDescription description);
 
    ProtocolDef getProtocolConfiguration(ProtocolDescription description);
+   
+   State getState();
+   
+   void setState(State state);
+   
+   public enum State 
+   {  
+      STARTED, STOPPED;
+   }
 
 }

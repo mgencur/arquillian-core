@@ -34,6 +34,7 @@ public class ContainerImpl implements Container
 {
    private DeployableContainer<?> deployableContainer;
    private String name;
+   private State state = State.STOPPED;
    
    private ContainerDef containerConfiguration;
    
@@ -117,5 +118,15 @@ public class ContainerImpl implements Container
          }
       }
       return null;
+   }
+
+   @Override
+   public State getState() {
+      return state;
+   }
+
+   @Override
+   public void setState(State state) {
+      this.state = state;      
    }
 }

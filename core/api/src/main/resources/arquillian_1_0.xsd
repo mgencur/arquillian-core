@@ -87,6 +87,7 @@
 	    	</choice>
 	    	<attribute name="qualifier" type="string" use="required" />
 	    	<attribute name="default" type="boolean" use="optional" default="false"/>
+	    	<attribute name="managed" type="boolean" use="optional" default="true"/>
 	    </complexType>
         <unique name="unique-protocol-within-container">
             <annotation>

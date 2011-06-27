@@ -27,6 +27,7 @@ import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StartManagedContainers;
 import org.jboss.arquillian.container.spi.event.StopContainer;
 import org.jboss.arquillian.container.spi.event.StopManagedContainers;
+import org.jboss.arquillian.container.spi.event.StopNonManagedContainers;
 import org.jboss.arquillian.container.spi.event.container.AfterSetup;
 import org.jboss.arquillian.container.spi.event.container.AfterStart;
 import org.jboss.arquillian.container.spi.event.container.AfterStop;
@@ -72,7 +73,7 @@ public class ContainerLifecycleController
 
    public void startContainers(@Observes StartManagedContainers event) throws Exception
    {
-      forEachContainer(new Operation<Container>()
+      forEachManagedContainer(new Operation<Container>()
       {
          @Inject
          private Event<StartContainer> event;
@@ -87,11 +88,26 @@ public class ContainerLifecycleController
 
    public void stopContainers(@Observes StopManagedContainers event) throws Exception
    {
-      forEachContainer(new Operation<Container>()
+      forEachManagedContainer(new Operation<Container>()
       {
          @Inject
          private Event<StopContainer> stopContainer;
 
+         @Override
+         public void perform(Container container)
+         {
+            stopContainer.fire(new StopContainer(container));
+         }
+      });
+   }
+   
+   public void stopNonManagedContainers(@Observes StopNonManagedContainers event) throws Exception
+   {
+      forEachNonManagedContainer(new Operation<Container>()
+      {
+         @Inject
+         private Event<StopContainer> stopContainer;
+         
          @Override
          public void perform(Container container)
          {
@@ -140,9 +156,13 @@ public class ContainerLifecycleController
          {
             DeployableContainer<?> deployable = container.getDeployableContainer();
             
-            event.fire(new BeforeStart(deployable));
-            deployable.start();
-            event.fire(new AfterStart(deployable));
+            if (!container.getState().equals(Container.State.STARTED)) 
+            {
+               event.fire(new BeforeStart(deployable));
+               deployable.start();
+               container.setState(Container.State.STARTED);
+               event.fire(new AfterStart(deployable));
+            }
          }
       });
    }
@@ -159,9 +179,13 @@ public class ContainerLifecycleController
          {
             DeployableContainer<?> deployable = container.getDeployableContainer();
             
-            event.fire(new BeforeStop(deployable));
-            deployable.stop();
-            event.fire(new AfterStop(deployable));
+            if (container.getState().equals(Container.State.STARTED)) 
+            {
+               event.fire(new BeforeStop(deployable));
+               deployable.stop();
+               container.setState(Container.State.STOPPED);
+               event.fire(new AfterStop(deployable));
+            }
          }
       });
    }
@@ -175,7 +199,33 @@ public class ContainerLifecycleController
          operation.perform(container);
       }
    }
-
+   
+   private void forEachManagedContainer(Operation<Container> operation) throws Exception
+   {
+      injector.get().inject(operation);
+      ContainerRegistry registry = containerRegistry.get();
+      for(Container container : registry.getContainers())
+      {
+         if (container.getContainerConfiguration().isManaged()) 
+         {
+            operation.perform(container);
+         }
+      }
+   }
+   
+   private void forEachNonManagedContainer(Operation<Container> operation) throws Exception
+   {
+      injector.get().inject(operation);
+      ContainerRegistry registry = containerRegistry.get();
+      for(Container container : registry.getContainers())
+      {
+         if (!container.getContainerConfiguration().isManaged()) 
+         {
+            operation.perform(container);
+         }
+      }
+   }
+   
    private void forContainer(Container container, Operation<Container> operation) throws Exception
    {
       injector.get().inject(operation);
