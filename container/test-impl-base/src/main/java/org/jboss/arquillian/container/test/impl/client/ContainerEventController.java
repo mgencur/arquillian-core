@@ -31,6 +31,7 @@ import org.jboss.arquillian.container.spi.event.DeployManagedDeployments;
 import org.jboss.arquillian.container.spi.event.SetupContainers;
 import org.jboss.arquillian.container.spi.event.StartManagedContainers;
 import org.jboss.arquillian.container.spi.event.StopManagedContainers;
+import org.jboss.arquillian.container.spi.event.StopNonManagedContainers;
 import org.jboss.arquillian.container.spi.event.UnDeployManagedDeployments;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.container.test.impl.client.deployment.event.GenerateDeployment;
@@ -99,7 +100,14 @@ public class ContainerEventController
 
    public void execute(@Observes AfterClass event)
    {
-      container.fire(new UnDeployManagedDeployments());
+      try
+      {
+         container.fire(new UnDeployManagedDeployments());
+      }
+      finally
+      {
+         container.fire(new StopNonManagedContainers());
+      }
    }
    
    /*
