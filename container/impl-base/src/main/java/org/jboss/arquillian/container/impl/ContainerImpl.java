@@ -22,11 +22,14 @@ import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
+import org.jboss.arquillian.container.spi.client.container.ServerKillProcessor;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.context.annotation.ContainerScoped;
+import org.jboss.arquillian.container.spi.event.container.AfterKill;
 import org.jboss.arquillian.container.spi.event.container.AfterSetup;
 import org.jboss.arquillian.container.spi.event.container.AfterStart;
 import org.jboss.arquillian.container.spi.event.container.AfterStop;
+import org.jboss.arquillian.container.spi.event.container.BeforeKill;
 import org.jboss.arquillian.container.spi.event.container.BeforeSetup;
 import org.jboss.arquillian.container.spi.event.container.BeforeStart;
 import org.jboss.arquillian.container.spi.event.container.BeforeStop;
@@ -215,5 +218,39 @@ public class ContainerImpl implements Container
          throw e;
       }
       event.fire(new AfterStop(deployableContainer));
+   }
+   
+   @Override
+   public void kill() throws Exception
+   {
+      event.fire(new BeforeKill(deployableContainer));
+      try 
+      {
+         // dummy implementation for testing purposes
+         new ServerKillProcessor() {
+            @Override
+            public boolean kill(Container container) 
+            {
+              try
+              {
+                container.getDeployableContainer().stop();
+                return true;
+              }
+              catch(Exception e) 
+              {
+                return false;
+              }
+            } 
+         }.kill(this);
+         
+         setState(Container.State.KILLED);
+      }
+      catch (Exception e)
+      {
+         setState(State.KILLED_FAILED);
+         failureCause = e;
+         throw e;
+      }
+      event.fire(new AfterKill(deployableContainer));
    }
 }

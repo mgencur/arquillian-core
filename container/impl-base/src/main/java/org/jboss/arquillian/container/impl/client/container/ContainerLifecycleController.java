@@ -19,6 +19,7 @@ package org.jboss.arquillian.container.impl.client.container;
 
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
+import org.jboss.arquillian.container.spi.event.KillContainer;
 import org.jboss.arquillian.container.spi.event.SetupContainer;
 import org.jboss.arquillian.container.spi.event.SetupContainers;
 import org.jboss.arquillian.container.spi.event.StartContainer;
@@ -143,6 +144,21 @@ public class ContainerLifecycleController
             if (container.getState().equals(Container.State.STARTED)) 
             {
                container.stop();
+            }
+         }
+      });
+   }
+   
+   public void killContainer(@Observes KillContainer event) throws Exception
+   {
+      forContainer(event.getContainer(), new Operation<Container>()
+      {
+         @Override
+         public void perform(Container container) throws Exception
+         {
+            if (container.getState().equals(Container.State.STARTED)) 
+            {
+               container.kill();
             }
          }
       });

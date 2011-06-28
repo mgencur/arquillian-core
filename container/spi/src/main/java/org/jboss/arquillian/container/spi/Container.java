@@ -63,6 +63,8 @@ public interface Container
    
    void stop() throws LifecycleException;
    
+   void kill() throws Exception;
+   
    State getState();
    
    Throwable getFailureCause();
@@ -71,7 +73,7 @@ public interface Container
    
    public enum State 
    {  
-      SETUP, SETUP_FAILED, STARTED, STARTED_FAILED, STOPPED, STOPPED_FAILED;
+      SETUP, SETUP_FAILED, STARTED, STARTED_FAILED, STOPPED, STOPPED_FAILED, KILLED, KILLED_FAILED;
    }
 
 }

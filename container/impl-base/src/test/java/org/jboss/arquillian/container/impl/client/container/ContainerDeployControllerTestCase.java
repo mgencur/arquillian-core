@@ -49,7 +49,10 @@ import org.jboss.arquillian.container.spi.event.container.AfterUnDeploy;
 import org.jboss.arquillian.container.spi.event.container.BeforeDeploy;
 import org.jboss.arquillian.container.spi.event.container.BeforeUnDeploy;
 import org.jboss.arquillian.container.test.AbstractContainerTestBase;
+import org.jboss.arquillian.core.api.Injector;
+import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -82,7 +85,10 @@ public class ContainerDeployControllerTestCase extends AbstractContainerTestBase
    private static final String DEPLOYMENT_2_NAME = "deployment_2";
    private static final String DEPLOYMENT_3_NAME = "deployment_3_manual";
    private static final String DEPLOYMENT_4_NAME = "deployment_4_descriptor";
-
+   
+   @Inject
+   private Instance<Injector> injector;
+   
    @Mock 
    private ServiceLoader serviceLoader;
    
@@ -101,7 +107,7 @@ public class ContainerDeployControllerTestCase extends AbstractContainerTestBase
    @Mock
    private ProtocolMetaData protocolMetaData;
 
-   private ContainerRegistry registry = new LocalContainerRegistry();
+   private ContainerRegistry registry;
    
    private DeploymentScenario scenario = new DeploymentScenario();
 
@@ -143,7 +149,9 @@ public class ContainerDeployControllerTestCase extends AbstractContainerTestBase
                .setTarget(new TargetDescription(CONTAINER_1_NAME))
                .setOrder(4)
                .shouldBeManaged(true));
-
+      
+      registry = new LocalContainerRegistry(injector.get());
+      
       bind(ApplicationScoped.class, ContainerRegistry.class, registry);
       bind(ApplicationScoped.class, DeploymentScenario.class, scenario);
       

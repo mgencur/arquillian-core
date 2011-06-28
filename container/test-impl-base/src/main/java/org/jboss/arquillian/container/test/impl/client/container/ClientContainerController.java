@@ -24,6 +24,7 @@ import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.container.spi.event.ContainerControlEvent;
+import org.jboss.arquillian.container.spi.event.KillContainer;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StopContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
@@ -93,8 +94,22 @@ public class ClientContainerController implements ContainerController
    @Override
    public void kill(String containerQualifier) 
    {
-      //TODO
-      log.warning("Hard killing of server instances not supported yet.");
+      ContainerRegistry registry = containerRegistry.get();
+      if(registry == null)
+      {
+         throw new IllegalArgumentException("No container registry in context");
+      }
+      
+      if (!containerExists(registry.getContainers(), containerQualifier))
+      {
+         throw new IllegalArgumentException("No container with the specified name exists");
+      }
+      
+      Container container = registry.getContainer(new TargetDescription(containerQualifier));
+      
+      log.info("Hard killing of a server instance");
+      
+      event.fire(new KillContainer(container));
    }
    
    private boolean containerExists(List<Container> containers, String name) 

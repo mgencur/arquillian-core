@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.arquillian.container.test.spi.client.container;
+package org.jboss.arquillian.container.spi.client.container;
 
 import org.jboss.arquillian.container.spi.Container;
 
@@ -28,7 +28,7 @@ import org.jboss.arquillian.container.spi.Container;
  * ServerKillProcessor
  * 
  * Implementations can be used to manually kill container instances from within
- * ContainerController. As opposed to start/stop methods of ContainerController,
+ * Container. As opposed to start/stop methods of Container,
  * this is dedicated for hard-kill of server instances.
  * 
  *
@@ -40,7 +40,7 @@ public interface ServerKillProcessor
    
    /**
     * 
-    * Return true if the kill command was succeeded, otherwise return
+    * Return true if the kill command succeeded, otherwise return
     * false.
     * 
     * @param container

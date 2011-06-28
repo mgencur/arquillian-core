@@ -40,21 +40,18 @@ public class ContainerContainerController implements ContainerController
    @Override
    public void start(String containerQualifier) 
    {
-      System.out.println("FIXME NYI container start");
       getCommandService().execute(new StartContainerCommand(containerQualifier));
    }
 
    @Override
    public void stop(String containerQualifier) 
    {
-      System.out.println("FIXME NYI container stop");
       getCommandService().execute(new StopContainerCommand(containerQualifier));
    }
 
    @Override
    public void kill(String containerQualifier)
    {
-      System.out.println("FIXME NYI container kill");
       getCommandService().execute(new KillContainerCommand(containerQualifier));
    }
    
