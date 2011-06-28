@@ -18,6 +18,8 @@
 package org.jboss.arquillian.container.test.impl.client.container;
 
 import java.util.List;
+import java.util.logging.Logger;
+
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
@@ -37,6 +39,9 @@ import org.jboss.arquillian.core.api.annotation.Inject;
  */
 public class ClientContainerController implements ContainerController
 {
+   
+   private final Logger log = Logger.getLogger(ClientContainerController.class.getName());
+   
    @Inject
    private Event<ContainerControlEvent> event;
    
@@ -46,8 +51,6 @@ public class ClientContainerController implements ContainerController
    @Override
    public void start(String containerQualifier) 
    {
-      System.out.println("FIXME NYI client start");
-      
       ContainerRegistry registry = containerRegistry.get();
       if(registry == null)
       {
@@ -60,6 +63,8 @@ public class ClientContainerController implements ContainerController
       }
       
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
+      
+      log.info("Manual starting of a server instance");
       
       event.fire(new StartContainer(container));
    }
@@ -67,8 +72,6 @@ public class ClientContainerController implements ContainerController
    @Override
    public void stop(String containerQualifier) 
    {
-      System.out.println("FIXME NYI client stop");
-      
       ContainerRegistry registry = containerRegistry.get();
       if(registry == null)
       {
@@ -82,15 +85,16 @@ public class ClientContainerController implements ContainerController
       
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
       
+      log.info("Manual stopping of a server instance");
+      
       event.fire(new StopContainer(container));
    }
 
    @Override
    public void kill(String containerQualifier) 
    {
-      //TODO ******************************************************************
-      System.out.println("FIXME NYI client kill");
-      //***********************************************************************
+      //TODO
+      log.warning("Hard killing of server instances not supported yet.");
    }
    
    private boolean containerExists(List<Container> containers, String name) 

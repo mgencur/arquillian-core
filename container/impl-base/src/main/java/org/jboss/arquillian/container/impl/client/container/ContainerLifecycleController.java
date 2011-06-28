@@ -19,8 +19,6 @@ package org.jboss.arquillian.container.impl.client.container;
 
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
-import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
-import org.jboss.arquillian.container.spi.context.annotation.ContainerScoped;
 import org.jboss.arquillian.container.spi.event.SetupContainer;
 import org.jboss.arquillian.container.spi.event.SetupContainers;
 import org.jboss.arquillian.container.spi.event.StartContainer;
@@ -28,17 +26,9 @@ import org.jboss.arquillian.container.spi.event.StartManagedContainers;
 import org.jboss.arquillian.container.spi.event.StopContainer;
 import org.jboss.arquillian.container.spi.event.StopManagedContainers;
 import org.jboss.arquillian.container.spi.event.StopNonManagedContainers;
-import org.jboss.arquillian.container.spi.event.container.AfterSetup;
-import org.jboss.arquillian.container.spi.event.container.AfterStart;
-import org.jboss.arquillian.container.spi.event.container.AfterStop;
-import org.jboss.arquillian.container.spi.event.container.BeforeSetup;
-import org.jboss.arquillian.container.spi.event.container.BeforeStart;
-import org.jboss.arquillian.container.spi.event.container.BeforeStop;
-import org.jboss.arquillian.container.spi.event.container.ContainerEvent;
 import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Injector;
 import org.jboss.arquillian.core.api.Instance;
-import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 
@@ -120,26 +110,10 @@ public class ContainerLifecycleController
    {
       forContainer(event.getContainer(), new Operation<Container>()
       {
-         @Inject
-         private Event<ContainerEvent> event;
-
-         @Inject @ContainerScoped
-         private InstanceProducer<Container> containerProducer;
-
-         @SuppressWarnings({"rawtypes", "unchecked"})
          @Override
          public void perform(Container container) throws Exception
          {
-            /*
-             * TODO: should the Container producer some how be automatically registered ?
-             * Or should we just 'know' who is the first one to create the context
-             */
-            containerProducer.set(container);  
-            DeployableContainer deployable = container.getDeployableContainer();
-            
-            event.fire(new BeforeSetup(deployable));
-            deployable.setup(container.createDeployableConfiguration());
-            event.fire(new AfterSetup(deployable));
+            container.setup();
          }
       });
    }
@@ -148,20 +122,12 @@ public class ContainerLifecycleController
    {
       forContainer(event.getContainer(), new Operation<Container>()
       {
-         @Inject
-         private Event<ContainerEvent> event;
-         
          @Override
          public void perform(Container container) throws Exception
          {
-            DeployableContainer<?> deployable = container.getDeployableContainer();
-            
             if (!container.getState().equals(Container.State.STARTED)) 
             {
-               event.fire(new BeforeStart(deployable));
-               deployable.start();
-               container.setState(Container.State.STARTED);
-               event.fire(new AfterStart(deployable));
+               container.start();
             }
          }
       });
@@ -171,20 +137,12 @@ public class ContainerLifecycleController
    {
       forContainer(event.getContainer(), new Operation<Container>()
       {
-         @Inject
-         private Event<ContainerEvent> event;
-
          @Override
          public void perform(Container container) throws Exception
          {
-            DeployableContainer<?> deployable = container.getDeployableContainer();
-            
             if (container.getState().equals(Container.State.STARTED)) 
             {
-               event.fire(new BeforeStop(deployable));
-               deployable.stop();
-               container.setState(Container.State.STOPPED);
-               event.fire(new AfterStop(deployable));
+               container.stop();
             }
          }
       });

@@ -100,8 +100,14 @@ public class ContainerEventController
 
    public void execute(@Observes AfterClass event)
    {
-      container.fire(new UnDeployManagedDeployments());
-      container.fire(new StopNonManagedContainers());
+      try
+      {
+         container.fire(new UnDeployManagedDeployments());
+      }
+      finally
+      {
+         container.fire(new StopNonManagedContainers());
+      }
    }
    
    /*
