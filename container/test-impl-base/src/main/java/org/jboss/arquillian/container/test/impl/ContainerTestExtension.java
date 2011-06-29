@@ -19,6 +19,7 @@ package org.jboss.arquillian.container.test.impl;
 
 import org.jboss.arquillian.container.test.impl.client.ContainerEventController;
 import org.jboss.arquillian.container.test.impl.client.LocalCommandService;
+import org.jboss.arquillian.container.test.impl.client.container.ClientContainerControllerCreator;
 import org.jboss.arquillian.container.test.impl.client.container.ContainerRestarter;
 import org.jboss.arquillian.container.test.impl.client.deployment.ClientDeployerCreator;
 import org.jboss.arquillian.container.test.impl.client.deployment.DeploymentGenerator;
@@ -60,6 +61,7 @@ public class ContainerTestExtension implements LoadableExtension
              .observer(ArchiveDeploymentToolingExporter.class)
              .observer(ProtocolRegistryCreator.class)
              .observer(TestInstanceEnricher.class)
+             .observer(ClientContainerControllerCreator.class)
              .observer(ClientDeployerCreator.class)
              .observer(ClientTestExecuter.class)
              .observer(LocalTestExecuter.class)

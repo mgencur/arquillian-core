@@ -17,7 +17,6 @@
  */
 package org.jboss.arquillian.container.test.impl.client.container;
 
-import org.jboss.arquillian.container.spi.event.SetupContainers;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Injector;
 import org.jboss.arquillian.core.api.Instance;
@@ -25,6 +24,7 @@ import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
+import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 
 /**
  * ContainerContainerControllerCreator
@@ -40,7 +40,7 @@ public class ContainerContainerControllerCreator
    @Inject 
    private Instance<Injector> injector;
 
-   public void createContainerSideContainerController(@Observes SetupContainers event)
+   public void createContainerSideContainerController(@Observes BeforeSuite event)
    {
       controller.set(injector.get().inject(new ContainerContainerController()));
    }
