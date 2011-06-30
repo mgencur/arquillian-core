@@ -230,21 +230,26 @@ public class ContainerImpl implements Container
       event.fire(new BeforeKill(deployableContainer));
       try 
       {
-         // dummy implementation for testing purposes
          new ServerKillProcessor() {
+            
+            private String killSequence = "kill -9 `ps aux | grep -v 'grep' | grep 'jboss.home.dir=[jbossHome] ' | sed -re '1,$s/[ \\t]+/ /g' | cut -d ' ' -f 2`";
             @Override
-            public boolean kill(Container container) 
+            public boolean kill(Container container) throws Exception 
             {
-              try
-              {
-                log.warning("Trigering a dummy implementation of a server Kill command -> stopping the server softly");
-                container.getDeployableContainer().stop();
+                killSequence = killSequence.replace("[jbossHome]",container.getContainerConfiguration().getContainerProperties().get("jbossHome"));
+                
+                log.info("Issuing Kill Sequence: " + killSequence);
+                
+                Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", killSequence});
+                
+                p.waitFor();
+                
+                if (p.exitValue() == 0) {
+                   log.info("Kill Sequence successful");
+                } else {
+                   throw new RuntimeException("Kill Sequence failed -> server not killed");
+                }
                 return true;
-              }
-              catch(Exception e) 
-              {
-                return false;
-              }
             } 
          }.kill(this);
          

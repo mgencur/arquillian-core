@@ -46,6 +46,6 @@ public interface ServerKillProcessor
     * @param container
     * @return 
     */
-   boolean kill(Container container);
+   boolean kill(Container container) throws Exception;
    
 }
