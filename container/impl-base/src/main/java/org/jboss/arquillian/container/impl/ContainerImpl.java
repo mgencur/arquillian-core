@@ -16,6 +16,8 @@
  */
 package org.jboss.arquillian.container.impl;
 
+import java.util.logging.Logger;
+
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.config.descriptor.api.ProtocolDef;
 import org.jboss.arquillian.container.spi.Container;
@@ -47,6 +49,8 @@ import org.jboss.arquillian.core.spi.Validate;
  */
 public class ContainerImpl implements Container
 {
+   private final Logger log = Logger.getLogger(ContainerImpl.class.getName());
+   
    @Inject
    private Event<ContainerEvent> event;
    
@@ -233,6 +237,7 @@ public class ContainerImpl implements Container
             {
               try
               {
+                log.warning("Trigering a dummy implementation of a server Kill command -> stopping the server softly");
                 container.getDeployableContainer().stop();
                 return true;
               }
