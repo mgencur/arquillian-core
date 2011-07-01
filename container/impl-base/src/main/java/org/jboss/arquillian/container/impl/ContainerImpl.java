@@ -16,15 +16,13 @@
  */
 package org.jboss.arquillian.container.impl;
 
-import java.util.logging.Logger;
-
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.config.descriptor.api.ProtocolDef;
 import org.jboss.arquillian.container.spi.Container;
+import org.jboss.arquillian.container.spi.ServerKillProcessor;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
-import org.jboss.arquillian.container.spi.client.container.ServerKillProcessor;
 import org.jboss.arquillian.container.spi.client.protocol.ProtocolDescription;
 import org.jboss.arquillian.container.spi.context.annotation.ContainerScoped;
 import org.jboss.arquillian.container.spi.event.container.AfterKill;
@@ -37,8 +35,10 @@ import org.jboss.arquillian.container.spi.event.container.BeforeStart;
 import org.jboss.arquillian.container.spi.event.container.BeforeStop;
 import org.jboss.arquillian.container.spi.event.container.ContainerEvent;
 import org.jboss.arquillian.core.api.Event;
+import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.arquillian.core.spi.ServiceLoader;
 import org.jboss.arquillian.core.spi.Validate;
 
 /**
@@ -49,13 +49,14 @@ import org.jboss.arquillian.core.spi.Validate;
  */
 public class ContainerImpl implements Container
 {
-   private final Logger log = Logger.getLogger(ContainerImpl.class.getName());
-   
    @Inject
    private Event<ContainerEvent> event;
    
    @Inject @ContainerScoped
    private InstanceProducer<Container> containerProducer;
+   
+   @Inject
+   private Instance<ServiceLoader> serviceLoader;
    
    private DeployableContainer<?> deployableContainer;
    private String name;
@@ -230,29 +231,7 @@ public class ContainerImpl implements Container
       event.fire(new BeforeKill(deployableContainer));
       try 
       {
-         new ServerKillProcessor() {
-            
-            private String killSequence = "kill -9 `ps aux | grep -v 'grep' | grep 'jboss.home.dir=[jbossHome] ' | sed -re '1,$s/[ \\t]+/ /g' | cut -d ' ' -f 2`";
-            @Override
-            public boolean kill(Container container) throws Exception 
-            {
-                killSequence = killSequence.replace("[jbossHome]",container.getContainerConfiguration().getContainerProperties().get("jbossHome"));
-                
-                log.info("Issuing Kill Sequence: " + killSequence);
-                
-                Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", killSequence});
-                
-                p.waitFor();
-                
-                if (p.exitValue() == 0) {
-                   log.info("Kill Sequence successful");
-                } else {
-                   throw new RuntimeException("Kill Sequence failed -> server not killed");
-                }
-                return true;
-            } 
-         }.kill(this);
-         
+         getServerKillProcessor().kill(this);
          setState(Container.State.KILLED);
       }
       catch (Exception e)
@@ -262,5 +241,22 @@ public class ContainerImpl implements Container
          throw e;
       }
       event.fire(new AfterKill(deployableContainer));
+   }
+   
+   private ServerKillProcessor getServerKillProcessor()
+   {
+      ServiceLoader loader = serviceLoader.get();
+      if(loader == null)
+      {
+         throw new IllegalStateException("No " + ServiceLoader.class.getName() + " found in context");
+      }
+      
+      ServerKillProcessor serverKillProcessor = serviceLoader.get().onlyOne(ServerKillProcessor.class, 
+                                                                            DefaultServerKillProcessor.class);
+      if(serverKillProcessor == null)
+      {
+         throw new IllegalStateException("No " + ServerKillProcessor.class.getName() + " found in context");
+      }
+      return serverKillProcessor;
    }
 }

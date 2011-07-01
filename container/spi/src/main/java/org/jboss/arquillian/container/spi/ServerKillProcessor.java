@@ -19,9 +19,8 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.arquillian.container.spi.client.container;
+package org.jboss.arquillian.container.spi;
 
-import org.jboss.arquillian.container.spi.Container;
 
 
 /**
@@ -40,12 +39,11 @@ public interface ServerKillProcessor
    
    /**
     * 
-    * Return true if the kill command succeeded, otherwise return
-    * false.
+    * Kill a server instance via a specific implementation.
     * 
     * @param container
-    * @return 
+    * @return
     */
-   boolean kill(Container container) throws Exception;
+   void kill(Container container) throws Exception;
    
 }
