@@ -18,13 +18,14 @@
 package org.jboss.arquillian.container.test.impl.client.container;
 
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
-
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.container.spi.event.ContainerControlEvent;
 import org.jboss.arquillian.container.spi.event.KillContainer;
+import org.jboss.arquillian.container.spi.event.SetupContainer;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StopContainer;
 import org.jboss.arquillian.container.test.api.ContainerController;
@@ -34,89 +35,117 @@ import org.jboss.arquillian.core.api.annotation.Inject;
 
 /**
  * ClientContainerController
- *
+ * 
  * @author <a href="mailto:mgencur@redhat.com">Martin Gencur</a>
  * @version $Revision: $
  */
 public class ClientContainerController implements ContainerController
 {
-   
+
    private final Logger log = Logger.getLogger(ClientContainerController.class.getName());
-   
+
    @Inject
    private Event<ContainerControlEvent> event;
-   
+
    @Inject
    private Instance<ContainerRegistry> containerRegistry;
-   
+
    @Override
-   public void start(String containerQualifier) 
+   public void start(String containerQualifier)
    {
       ContainerRegistry registry = containerRegistry.get();
-      if(registry == null)
+      if (registry == null)
       {
          throw new IllegalArgumentException("No container registry in context");
       }
-      
+
       if (!containerExists(registry.getContainers(), containerQualifier))
       {
          throw new IllegalArgumentException("No container with the specified name exists");
       }
-      
+
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
-      
+
       log.info("Manual starting of a server instance");
-      
+
       event.fire(new StartContainer(container));
    }
 
    @Override
-   public void stop(String containerQualifier) 
+   public void start(String containerQualifier, Map<String, String> config)
    {
       ContainerRegistry registry = containerRegistry.get();
-      if(registry == null)
+      if (registry == null)
       {
          throw new IllegalArgumentException("No container registry in context");
       }
-      
+
       if (!containerExists(registry.getContainers(), containerQualifier))
       {
          throw new IllegalArgumentException("No container with the specified name exists");
       }
-      
+
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
-      
+
+      for (String name : config.keySet())
+      {
+         container.getContainerConfiguration().overrideProperty(name, config.get(name));
+      }
+
+      log.info("Manual starting of a server instance with overridden configuration. New configuration: " +
+         container.getContainerConfiguration().getContainerProperties());
+
+      event.fire(new SetupContainer(container));
+      event.fire(new StartContainer(container));
+   }
+
+   @Override
+   public void stop(String containerQualifier)
+   {
+      ContainerRegistry registry = containerRegistry.get();
+      if (registry == null)
+      {
+         throw new IllegalArgumentException("No container registry in context");
+      }
+
+      if (!containerExists(registry.getContainers(), containerQualifier))
+      {
+         throw new IllegalArgumentException("No container with the specified name exists");
+      }
+
+      Container container = registry.getContainer(new TargetDescription(containerQualifier));
+
       log.info("Manual stopping of a server instance");
-      
+
       event.fire(new StopContainer(container));
    }
 
    @Override
-   public void kill(String containerQualifier) 
+   public void kill(String containerQualifier)
    {
       ContainerRegistry registry = containerRegistry.get();
-      if(registry == null)
+      if (registry == null)
       {
          throw new IllegalArgumentException("No container registry in context");
       }
-      
+
       if (!containerExists(registry.getContainers(), containerQualifier))
       {
          throw new IllegalArgumentException("No container with the specified name exists");
       }
-      
+
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
-      
+
       log.info("Hard killing of a server instance");
-      
+
       event.fire(new KillContainer(container));
    }
-   
-   private boolean containerExists(List<Container> containers, String name) 
+
+   private boolean containerExists(List<Container> containers, String name)
    {
-      for (Container container: containers) 
+      for (Container container : containers)
       {
-         if (container.getName().equals(name)) 
+         if (container.getName().equals(name))
          {
             return true;
          }

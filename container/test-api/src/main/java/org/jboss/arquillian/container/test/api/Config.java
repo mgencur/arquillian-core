@@ -21,23 +21,41 @@
  */
 package org.jboss.arquillian.container.test.api;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A interface that describes how you can start/stop server instances during test execution.
- *
+ * Config class enables users to use fluent API for creating a list of
+ * properties which should be overridden in the existing arquillian
+ * configuration. It holds a map of properties that can be retrieved via
+ * {@link Config#map()} and the results should be passed e.g. to
+ * {@link ContainerController#start(String, Map)} 
+ * 
  * @author <a href="mailto:mgencur@redhat.com">Martin Gencur</a>
  * @version $Revision: $
  */
-public interface ContainerController 
+public class Config
 {
-   
-   public void start(String containerQualifier);
-   
-   public void start(String containerQualifier, Map<String, String> config);
-   
-   public void stop(String containerQualifier);
-   
-   public void kill(String containerQualifier);
-   
+   private Map<String, String> props;
+
+   public Config()
+   {
+      this.props = new HashMap<String, String>();
+   }
+
+   public Map<String, String> getProperties()
+   {
+      return props;
+   }
+
+   public Config add(String name, String value)
+   {
+      props.put(name, value);
+      return this;
+   }
+
+   public Map<String, String> map()
+   {
+      return props;
+   }
 }

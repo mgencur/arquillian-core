@@ -35,9 +35,9 @@ import org.jboss.arquillian.container.spi.context.ContainerContext;
 import org.jboss.arquillian.container.spi.context.DeploymentContext;
 import org.jboss.arquillian.container.spi.event.DeployManagedDeployments;
 import org.jboss.arquillian.container.spi.event.SetupContainers;
-import org.jboss.arquillian.container.spi.event.StartManagedContainers;
-import org.jboss.arquillian.container.spi.event.StopManagedContainers;
-import org.jboss.arquillian.container.spi.event.StopNonManagedContainers;
+import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
+import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
+import org.jboss.arquillian.container.spi.event.StopManualContainers;
 import org.jboss.arquillian.container.spi.event.UnDeployManagedDeployments;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.container.test.impl.client.ContainerEventController;
@@ -92,7 +92,7 @@ public class ContainerEventControllerTestCase extends AbstractContainerTestTestB
    @Mock
    private DeployableContainer deployableContainer1;
 
-   private ContainerRegistry registry = new LocalContainerRegistry();
+   private ContainerRegistry registry;
 
    private DeploymentScenario scenario = new DeploymentScenario();
 
@@ -130,7 +130,7 @@ public class ContainerEventControllerTestCase extends AbstractContainerTestTestB
       fire(new BeforeSuite());
 
       assertEventFired(SetupContainers.class, 1);
-      assertEventFired(StartManagedContainers.class, 1);
+      assertEventFired(StartSuiteContainers.class, 1);
    }
 
    @Test
@@ -138,7 +138,7 @@ public class ContainerEventControllerTestCase extends AbstractContainerTestTestB
    {
       fire(new AfterSuite());
 
-      assertEventFired(StopManagedContainers.class, 1);
+      assertEventFired(StopSuiteContainers.class, 1);
    }
 
    @Test
@@ -150,12 +150,12 @@ public class ContainerEventControllerTestCase extends AbstractContainerTestTestB
    }
 
    @Test
-   public void shouldUnDeployManagedDeploymentsAndStopNonManagedContainers() throws Exception
+   public void shouldUnDeployManagedDeploymentsAndStopManualContainers() throws Exception
    {
       fire(new AfterClass(testClass()));
 
       assertEventFired(UnDeployManagedDeployments.class, 1);
-      assertEventFired(StopNonManagedContainers.class, 1);
+      assertEventFired(StopManualContainers.class, 1);
    }
 
    @Test

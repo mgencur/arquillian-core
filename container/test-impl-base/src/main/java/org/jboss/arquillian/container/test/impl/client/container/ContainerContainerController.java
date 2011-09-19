@@ -17,6 +17,8 @@
  */
 package org.jboss.arquillian.container.test.impl.client.container;
 
+import java.util.Map;
+
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.impl.client.container.command.KillContainerCommand;
 import org.jboss.arquillian.container.test.impl.client.container.command.StartContainerCommand;
@@ -42,13 +44,19 @@ public class ContainerContainerController implements ContainerController
    {
       getCommandService().execute(new StartContainerCommand(containerQualifier));
    }
+   
+   @Override
+   public void start(String containerQualifier, Map<String, String> config)
+   {
+      getCommandService().execute(new StartContainerCommand(containerQualifier, config));
+   }
 
    @Override
    public void stop(String containerQualifier) 
    {
       getCommandService().execute(new StopContainerCommand(containerQualifier));
    }
-
+   
    @Override
    public void kill(String containerQualifier)
    {

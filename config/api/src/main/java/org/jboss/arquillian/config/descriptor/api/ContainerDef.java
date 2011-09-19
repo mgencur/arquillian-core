@@ -35,13 +35,15 @@ public interface ContainerDef extends ArquillianDescriptor
    
    boolean isDefault();
    
-   ContainerDef setManaged();
+   ContainerDef setMode(String mode);
    
-   boolean isManaged();
+   String getMode();
    
    ContainerDef dependency(String artifactId);
    
    ContainerDef property(String name, String value);
+   
+   ContainerDef overrideProperty(String name, String value);
    
    Map<String, String> getContainerProperties();
    

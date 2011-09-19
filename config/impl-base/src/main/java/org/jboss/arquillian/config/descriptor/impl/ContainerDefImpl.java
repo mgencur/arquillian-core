@@ -95,22 +95,22 @@ public class ContainerDefImpl extends ArquillianDescriptorImpl implements Contai
    }
    
    /* (non-Javadoc)
-    * @see org.jboss.arquillian.impl.configuration.api.ContainerDef#setManaged()
+    * @see org.jboss.arquillian.impl.configuration.api.ContainerDef#setMode(java.lang.String)
     */
    @Override
-   public ContainerDef setManaged()
+   public ContainerDef setMode(String mode)
    {
-      container.attribute("managed", true);
+      container.attribute("mode", mode);
       return this;
    }
    
    /* (non-Javadoc)
-    * @see org.jboss.arquillian.impl.configuration.api.ContainerDef#isManaged()
+    * @see org.jboss.arquillian.impl.configuration.api.ContainerDef#getMode()
     */
    @Override
-   public boolean isManaged()
+   public String getMode()
    {
-      return Boolean.parseBoolean(container.getAttribute("managed"));
+      return container.getAttribute("mode") == null ? "suite" : container.getAttribute("mode");
    }
    
    /* (non-Javadoc)
@@ -146,6 +146,17 @@ public class ContainerDefImpl extends ArquillianDescriptorImpl implements Contai
       return this;
    }
  
+   /* (non-Javadoc)
+    * @see org.jboss.arquillian.impl.configuration.api.ContainerDescription#overrideProperty(java.lang.String, java.lang.String)
+    */
+   @Override
+   public ContainerDef overrideProperty(String name, String value) 
+   {
+      container.getOrCreate("configuration").removeChild("property@name=" + name);
+      container.getOrCreate("configuration").getOrCreate("property@name=" + name).text(value);
+      return this;
+   }
+
    /* (non-Javadoc)
     * @see org.jboss.arquillian.impl.configuration.api.ContainerDef#getProperties()
     */

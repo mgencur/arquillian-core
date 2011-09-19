@@ -23,10 +23,10 @@ import org.jboss.arquillian.container.spi.event.KillContainer;
 import org.jboss.arquillian.container.spi.event.SetupContainer;
 import org.jboss.arquillian.container.spi.event.SetupContainers;
 import org.jboss.arquillian.container.spi.event.StartContainer;
-import org.jboss.arquillian.container.spi.event.StartManagedContainers;
+import org.jboss.arquillian.container.spi.event.StartSuiteContainers;
 import org.jboss.arquillian.container.spi.event.StopContainer;
-import org.jboss.arquillian.container.spi.event.StopManagedContainers;
-import org.jboss.arquillian.container.spi.event.StopNonManagedContainers;
+import org.jboss.arquillian.container.spi.event.StopSuiteContainers;
+import org.jboss.arquillian.container.spi.event.StopManualContainers;
 import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Injector;
 import org.jboss.arquillian.core.api.Instance;
@@ -62,9 +62,9 @@ public class ContainerLifecycleController
       });
    }
 
-   public void startContainers(@Observes StartManagedContainers event) throws Exception
+   public void startSuiteContainers(@Observes StartSuiteContainers event) throws Exception
    {
-      forEachManagedContainer(new Operation<Container>()
+      forEachSuiteContainer(new Operation<Container>()
       {
          @Inject
          private Event<StartContainer> event;
@@ -77,9 +77,9 @@ public class ContainerLifecycleController
       });
    }
 
-   public void stopContainers(@Observes StopManagedContainers event) throws Exception
+   public void stopSuiteContainers(@Observes StopSuiteContainers event) throws Exception
    {
-      forEachManagedContainer(new Operation<Container>()
+      forEachSuiteContainer(new Operation<Container>()
       {
          @Inject
          private Event<StopContainer> stopContainer;
@@ -92,9 +92,9 @@ public class ContainerLifecycleController
       });
    }
    
-   public void stopNonManagedContainers(@Observes StopNonManagedContainers event) throws Exception
+   public void stopManualContainers(@Observes StopManualContainers event) throws Exception
    {
-      forEachNonManagedContainer(new Operation<Container>()
+      forEachManualContainer(new Operation<Container>()
       {
          @Inject
          private Event<StopContainer> stopContainer;
@@ -178,26 +178,26 @@ public class ContainerLifecycleController
       }
    }
    
-   private void forEachManagedContainer(Operation<Container> operation) throws Exception
+   private void forEachSuiteContainer(Operation<Container> operation) throws Exception
    {
       injector.get().inject(operation);
       ContainerRegistry registry = containerRegistry.get();
       for(Container container : registry.getContainers())
       {
-         if (container.getContainerConfiguration().isManaged()) 
+         if ("suite".equals(container.getContainerConfiguration().getMode())) 
          {
             operation.perform(container);
          }
       }
    }
    
-   private void forEachNonManagedContainer(Operation<Container> operation) throws Exception
+   private void forEachManualContainer(Operation<Container> operation) throws Exception
    {
       injector.get().inject(operation);
       ContainerRegistry registry = containerRegistry.get();
       for(Container container : registry.getContainers())
       {
-         if (!container.getContainerConfiguration().isManaged()) 
+         if ("manual".equals(container.getContainerConfiguration().getMode())) 
          {
             operation.perform(container);
          }
