@@ -19,8 +19,7 @@ package org.jboss.arquillian.container.test.impl.client.container;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.jboss.arquillian.container.impl.client.container.ContainerLifecycleController;
+import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
@@ -28,6 +27,7 @@ import org.jboss.arquillian.container.spi.event.KillContainer;
 import org.jboss.arquillian.container.spi.event.SetupContainers;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StopContainer;
+import org.jboss.arquillian.container.test.api.Config;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.test.AbstractContainerTestTestBase;
 import org.jboss.arquillian.core.api.Instance;
@@ -49,7 +49,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class ClientContainerControllerTestCase extends AbstractContainerTestTestBase
 {
-   private static final String DEFAULT_SERVER_NAME = "default";
+   private static final String MANAGED_SERVER_NAME = "suiteOrClassServer";
+   private static final String MANUAL_SERVER_NAME = "manualServer";
    private static final String UNKNOWN_SERVER = "unknown";
    
    @Override
@@ -65,13 +66,23 @@ public class ClientContainerControllerTestCase extends AbstractContainerTestTest
    public void createSetup()
    {
       ContainerRegistry reg = Mockito.mock(ContainerRegistry.class);
-      Container container = Mockito.mock(Container.class);
-      Mockito.when(container.getName()).thenReturn(DEFAULT_SERVER_NAME);
+      Container containerManaged = Mockito.mock(Container.class);
+      ContainerDef suiteContainerDef = Mockito.mock(ContainerDef.class);
+      Mockito.when(suiteContainerDef.getMode()).thenReturn("suite");
+      Mockito.when(containerManaged.getContainerConfiguration()).thenReturn(suiteContainerDef);
+      Mockito.when(containerManaged.getName()).thenReturn(MANAGED_SERVER_NAME);
+      Container containerManual = Mockito.mock(Container.class);
+      ContainerDef manualContainerDef = Mockito.mock(ContainerDef.class);
+      Mockito.when(manualContainerDef.getMode()).thenReturn("manual");
+      Mockito.when(containerManual.getContainerConfiguration()).thenReturn(manualContainerDef);
+      Mockito.when(containerManual.getName()).thenReturn(MANUAL_SERVER_NAME);
       
       List<Container> containers = new ArrayList<Container>();
-      containers.add(container);
+      containers.add(containerManaged);
+      containers.add(containerManual);
       Mockito.when(reg.getContainers()).thenReturn(containers);
-      Mockito.when(reg.getContainer(new TargetDescription(DEFAULT_SERVER_NAME))).thenReturn(container);
+      Mockito.when(reg.getContainer(new TargetDescription(MANAGED_SERVER_NAME))).thenReturn(containerManaged);
+      Mockito.when(reg.getContainer(new TargetDescription(MANUAL_SERVER_NAME))).thenReturn(containerManual);
       
       bind(ApplicationScoped.class, ContainerRegistry.class, reg);
 
@@ -81,15 +92,23 @@ public class ClientContainerControllerTestCase extends AbstractContainerTestTest
    @Test
    public void shouldFireStartContainerEventOnStart() throws Exception
    {
-      controller.get().start(DEFAULT_SERVER_NAME);
+      controller.get().start(MANUAL_SERVER_NAME);
 
+      assertEventFired(StartContainer.class, 1);
+   }
+   
+   @Test
+   public void shouldFireStartContainerEventOnStartWithOverrides() throws Exception
+   {
+      controller.get().start(MANUAL_SERVER_NAME, new Config().add("managementPort", "19999").map());
+      
       assertEventFired(StartContainer.class, 1);
    }
 
    @Test
    public void shouldFireStopContainerEventOnStop() throws Exception
    {
-      controller.get().stop(DEFAULT_SERVER_NAME);
+      controller.get().stop(MANUAL_SERVER_NAME);
       
       assertEventFired(StopContainer.class, 1);
    }
@@ -97,9 +116,33 @@ public class ClientContainerControllerTestCase extends AbstractContainerTestTest
    @Test
    public void shouldFireKillContainerEventOnKill() throws Exception
    {
-      controller.get().kill(DEFAULT_SERVER_NAME);
+      controller.get().kill(MANUAL_SERVER_NAME);
       
       assertEventFired(KillContainer.class, 1);
+   }
+   
+   @Test(expected = IllegalArgumentException.class)
+   public void shouldThrowExceptionOnStartWhenManaged() throws Exception
+   {
+      controller.get().start(MANAGED_SERVER_NAME);
+   }
+   
+   @Test(expected = IllegalArgumentException.class)
+   public void shouldThrowExceptionOnStartWithOverridesWhenManaged() throws Exception
+   {
+      controller.get().start(MANAGED_SERVER_NAME, new Config().add("managementPort", "19999").map());
+   }
+      
+   @Test(expected = IllegalArgumentException.class)
+   public void shouldThrowExceptionOnStopWhenManaged() throws Exception
+   {
+      controller.get().stop(MANAGED_SERVER_NAME);
+   }
+   
+   @Test(expected = IllegalArgumentException.class)
+   public void shouldThrowExceptionOnKillWhenManaged() throws Exception
+   {
+      controller.get().kill(MANAGED_SERVER_NAME);
    }
    
    @Test(expected = IllegalArgumentException.class)

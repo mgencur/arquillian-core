@@ -64,6 +64,11 @@ public class ClientContainerController implements ContainerController
          throw new IllegalArgumentException("No container with the specified name exists");
       }
 
+      if (!isManualContainer(registry.getContainers(), containerQualifier))
+      {
+         throw new IllegalArgumentException("Could not start \"" + containerQualifier + "\" container. The container life cycle is controlled by Arquillian");
+      }
+
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
 
       log.info("Manual starting of a server instance");
@@ -84,6 +89,11 @@ public class ClientContainerController implements ContainerController
       {
          throw new IllegalArgumentException("No container with the specified name exists");
       }
+      
+      if (!isManualContainer(registry.getContainers(), containerQualifier))
+      {
+         throw new IllegalArgumentException("Could not start \"" + containerQualifier + "\" container. The container life cycle is controlled by Arquillian");
+      }
 
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
 
@@ -92,7 +102,7 @@ public class ClientContainerController implements ContainerController
          container.getContainerConfiguration().overrideProperty(name, config.get(name));
       }
 
-      log.info("Manual starting of a server instance with overridden configuration. New configuration: " +
+      log.info("Manual starting of a server instance with overridden configuration. New configuration: " + 
          container.getContainerConfiguration().getContainerProperties());
 
       event.fire(new SetupContainer(container));
@@ -111,6 +121,11 @@ public class ClientContainerController implements ContainerController
       if (!containerExists(registry.getContainers(), containerQualifier))
       {
          throw new IllegalArgumentException("No container with the specified name exists");
+      }
+      
+      if (!isManualContainer(registry.getContainers(), containerQualifier))
+      {
+         throw new IllegalArgumentException("Could not start \"" + containerQualifier + "\" container. The container life cycle is controlled by Arquillian");
       }
 
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
@@ -133,6 +148,11 @@ public class ClientContainerController implements ContainerController
       {
          throw new IllegalArgumentException("No container with the specified name exists");
       }
+      
+      if (!isManualContainer(registry.getContainers(), containerQualifier))
+      {
+         throw new IllegalArgumentException("Could not start \"" + containerQualifier + "\" container. The container life cycle is controlled by Arquillian");
+      }
 
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
 
@@ -146,6 +166,18 @@ public class ClientContainerController implements ContainerController
       for (Container container : containers)
       {
          if (container.getName().equals(name))
+         {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   private boolean isManualContainer(List<Container> containers, String containerQualifier)
+   {
+      for (Container container : containers)
+      {
+         if (container.getName().equals(containerQualifier) && "manual".equals(container.getContainerConfiguration().getMode()))
          {
             return true;
          }

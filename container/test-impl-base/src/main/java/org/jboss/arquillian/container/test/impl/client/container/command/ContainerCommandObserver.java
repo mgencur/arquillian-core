@@ -63,7 +63,7 @@ public class ContainerCommandObserver
          {
             controllerInst.get().start(event.getContainerQualifier(), event.getConfiguration());
          }
-         event.setResult("SUCESS");
+         event.setResult("SUCCESS");
       }
       catch (Exception e) 
       {
@@ -76,7 +76,7 @@ public class ContainerCommandObserver
       try
       {
          controllerInst.get().stop(event.getContainerQualifier());
-         event.setResult("SUCESS");
+         event.setResult("SUCCESS");
       }
       catch (Exception e) 
       {
@@ -89,7 +89,7 @@ public class ContainerCommandObserver
       try
       {
          controllerInst.get().kill(event.getContainerQualifier());
-         event.setResult("SUCESS");
+         event.setResult("SUCCESS");
       }
       catch (Exception e) 
       {
