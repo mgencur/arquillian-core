@@ -22,12 +22,18 @@ import java.util.Map;
 import java.util.logging.Logger;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
+import org.jboss.arquillian.container.spi.client.deployment.Deployment;
+import org.jboss.arquillian.container.spi.client.deployment.DeploymentScenario;
+import org.jboss.arquillian.container.spi.client.deployment.DeploymentTargetDescription;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
 import org.jboss.arquillian.container.spi.event.ContainerControlEvent;
+import org.jboss.arquillian.container.spi.event.DeployDeployment;
+import org.jboss.arquillian.container.spi.event.DeployManagedDeployments;
 import org.jboss.arquillian.container.spi.event.KillContainer;
 import org.jboss.arquillian.container.spi.event.SetupContainer;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StopContainer;
+import org.jboss.arquillian.container.spi.event.UnDeployDeployment;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.core.api.Event;
 import org.jboss.arquillian.core.api.Instance;
@@ -38,6 +44,7 @@ import org.jboss.arquillian.core.api.annotation.Inject;
  * 
  * @author <a href="mailto:mgencur@redhat.com">Martin Gencur</a>
  * @version $Revision: $
+ * 
  */
 public class ClientContainerController implements ContainerController
 {
@@ -49,10 +56,19 @@ public class ClientContainerController implements ContainerController
 
    @Inject
    private Instance<ContainerRegistry> containerRegistry;
+   
+   @Inject
+   private Instance<DeploymentScenario> deploymentScenario;
 
    @Override
    public void start(String containerQualifier)
    {
+      DeploymentScenario scenario = deploymentScenario.get();
+      if(scenario == null)
+      {
+         throw new IllegalArgumentException("No deployment scenario in context");
+      }
+      
       ContainerRegistry registry = containerRegistry.get();
       if (registry == null)
       {
@@ -66,19 +82,37 @@ public class ClientContainerController implements ContainerController
 
       if (!isManualContainer(registry.getContainers(), containerQualifier))
       {
-         throw new IllegalArgumentException("Could not start \"" + containerQualifier + "\" container. The container life cycle is controlled by Arquillian");
+         throw new IllegalArgumentException("Could not start " + containerQualifier + " container. The container life cycle is controlled by Arquillian");
       }
-
+      
+      List<Deployment> managedDeployments = scenario.startupDeploymentsFor(new TargetDescription(containerQualifier));
+      
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
 
       log.info("Manual starting of a server instance");
 
       event.fire(new StartContainer(container));
+      
+      for (Deployment d : managedDeployments)
+      {
+         if (!d.isDeployed()) 
+         {
+            log.info("Automatic deploying of the managed deployment with name " + d.getDescription().getName() + 
+               " for the container with name " + container.getName());
+            event.fire(new DeployDeployment(container, d));
+         }
+      }
    }
 
    @Override
    public void start(String containerQualifier, Map<String, String> config)
    {
+      DeploymentScenario scenario = deploymentScenario.get();
+      if(scenario == null)
+      {
+         throw new IllegalArgumentException("No deployment scenario in context");
+      }
+      
       ContainerRegistry registry = containerRegistry.get();
       if (registry == null)
       {
@@ -92,9 +126,11 @@ public class ClientContainerController implements ContainerController
       
       if (!isManualContainer(registry.getContainers(), containerQualifier))
       {
-         throw new IllegalArgumentException("Could not start \"" + containerQualifier + "\" container. The container life cycle is controlled by Arquillian");
+         throw new IllegalArgumentException("Could not start " + containerQualifier + " container. The container life cycle is controlled by Arquillian");
       }
 
+      List<Deployment> managedDeployments = scenario.startupDeploymentsFor(new TargetDescription(containerQualifier));
+      
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
 
       for (String name : config.keySet())
@@ -107,11 +143,27 @@ public class ClientContainerController implements ContainerController
 
       event.fire(new SetupContainer(container));
       event.fire(new StartContainer(container));
+      
+      for (Deployment d : managedDeployments)
+      {
+         if (!d.isDeployed()) 
+         {
+            log.info("Automatic deploying of the managed deployment with name " + d.getDescription().getName() + 
+               " for the container with name " + container.getName());
+            event.fire(new DeployDeployment(container, d));
+         }
+      }
    }
 
    @Override
    public void stop(String containerQualifier)
    {
+      DeploymentScenario scenario = deploymentScenario.get();
+      if(scenario == null)
+      {
+         throw new IllegalArgumentException("No deployment scenario in context");
+      }
+      
       ContainerRegistry registry = containerRegistry.get();
       if (registry == null)
       {
@@ -125,11 +177,23 @@ public class ClientContainerController implements ContainerController
       
       if (!isManualContainer(registry.getContainers(), containerQualifier))
       {
-         throw new IllegalArgumentException("Could not start \"" + containerQualifier + "\" container. The container life cycle is controlled by Arquillian");
+         throw new IllegalArgumentException("Could not start " + containerQualifier + " container. The container life cycle is controlled by Arquillian");
       }
 
       Container container = registry.getContainer(new TargetDescription(containerQualifier));
 
+      List<Deployment> managedDeployments = scenario.startupDeploymentsFor(new TargetDescription(containerQualifier));
+      
+      for (Deployment d : managedDeployments)
+      {
+         if (d.isDeployed()) 
+         {
+            log.info("Automatic undeploying of the managed deployment with name " + d.getDescription().getName() + 
+               " from the container with name " + container.getName());
+            event.fire(new UnDeployDeployment(container, d));
+         }
+      }
+      
       log.info("Manual stopping of a server instance");
 
       event.fire(new StopContainer(container));
@@ -151,7 +215,7 @@ public class ClientContainerController implements ContainerController
       
       if (!isManualContainer(registry.getContainers(), containerQualifier))
       {
-         throw new IllegalArgumentException("Could not start \"" + containerQualifier + "\" container. The container life cycle is controlled by Arquillian");
+         throw new IllegalArgumentException("Could not start " + containerQualifier + " container. The container life cycle is controlled by Arquillian");
       }
 
       Container container = registry.getContainer(new TargetDescription(containerQualifier));

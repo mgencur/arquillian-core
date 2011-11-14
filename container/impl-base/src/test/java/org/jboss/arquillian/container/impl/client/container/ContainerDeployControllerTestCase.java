@@ -30,6 +30,7 @@ import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.container.impl.LocalContainerRegistry;
 import org.jboss.arquillian.container.impl.client.ContainerDeploymentContextHandler;
 import org.jboss.arquillian.container.impl.client.container.ContainerLifecycleControllerTestCase.DummyContainerConfiguration;
+import org.jboss.arquillian.container.spi.Container.State;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -204,9 +205,14 @@ public class ContainerDeployControllerTestCase extends AbstractContainerTestBase
    {
       registry.create(container1, serviceLoader);
       registry.create(container2, serviceLoader);
-
-      // setup Managed deployment as Deployed. it should be part of undeploy.
+      registry.getContainer(CONTAINER_1_NAME).setState(State.STARTED);
+      registry.getContainer(CONTAINER_2_NAME).setState(State.STARTED);
+      
+      // setup all deployment as deployed so that we can observe UnDeployDeployment events
+      scenario.deployment(new DeploymentTargetDescription(DEPLOYMENT_1_NAME)).deployed();
+      scenario.deployment(new DeploymentTargetDescription(DEPLOYMENT_2_NAME)).deployed();
       scenario.deployment(new DeploymentTargetDescription(DEPLOYMENT_3_NAME)).deployed();
+      scenario.deployment(new DeploymentTargetDescription(DEPLOYMENT_4_NAME)).deployed();
       
       fire(new UnDeployManagedDeployments());
       

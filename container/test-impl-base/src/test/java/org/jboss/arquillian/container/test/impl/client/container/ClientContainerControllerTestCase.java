@@ -22,17 +22,24 @@ import java.util.List;
 import org.jboss.arquillian.config.descriptor.api.ContainerDef;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.ContainerRegistry;
+import org.jboss.arquillian.container.spi.client.deployment.DeploymentDescription;
+import org.jboss.arquillian.container.spi.client.deployment.DeploymentScenario;
+import org.jboss.arquillian.container.spi.client.deployment.DeploymentTargetDescription;
 import org.jboss.arquillian.container.spi.client.deployment.TargetDescription;
+import org.jboss.arquillian.container.spi.event.DeployDeployment;
 import org.jboss.arquillian.container.spi.event.KillContainer;
 import org.jboss.arquillian.container.spi.event.SetupContainers;
 import org.jboss.arquillian.container.spi.event.StartContainer;
 import org.jboss.arquillian.container.spi.event.StopContainer;
+import org.jboss.arquillian.container.spi.event.UnDeployDeployment;
 import org.jboss.arquillian.container.test.api.Config;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.container.test.test.AbstractContainerTestTestBase;
 import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,6 +60,8 @@ public class ClientContainerControllerTestCase extends AbstractContainerTestTest
    private static final String MANUAL_SERVER_NAME = "manualServer";
    private static final String UNKNOWN_SERVER = "unknown";
    
+   private static final String DEPLOYMENT_NAME = "DEPLOYMENT";
+   
    @Override
    protected void addExtensions(List<Class<?>> extensions)
    {
@@ -61,6 +70,9 @@ public class ClientContainerControllerTestCase extends AbstractContainerTestTest
    
    @Inject
    private Instance<ContainerController> controller;
+   
+   @Inject
+   private Instance<DeploymentScenario> scenario;
    
    @Before
    public void createSetup()
@@ -85,7 +97,8 @@ public class ClientContainerControllerTestCase extends AbstractContainerTestTest
       Mockito.when(reg.getContainer(new TargetDescription(MANUAL_SERVER_NAME))).thenReturn(containerManual);
       
       bind(ApplicationScoped.class, ContainerRegistry.class, reg);
-
+      bind(ApplicationScoped.class, DeploymentScenario.class, new DeploymentScenario());
+      
       fire(new SetupContainers());
    }
 
@@ -95,6 +108,64 @@ public class ClientContainerControllerTestCase extends AbstractContainerTestTest
       controller.get().start(MANUAL_SERVER_NAME);
 
       assertEventFired(StartContainer.class, 1);
+   }
+   
+   @Test
+   public void shouldFireDeployDeploymentEventOnStartWhenManagedDeployment() throws Exception
+   {
+      DeploymentDescription description = new DeploymentDescription(DEPLOYMENT_NAME, ShrinkWrap.create(JavaArchive.class));
+      description.shouldBeManaged(true);
+      description.setTarget(new TargetDescription(MANUAL_SERVER_NAME));
+      scenario.get().addDeployment(description);
+      
+      controller.get().start(MANUAL_SERVER_NAME);
+      controller.get().start(MANUAL_SERVER_NAME, new Config().add("managementPort", "19999").map());
+
+      assertEventFired(DeployDeployment.class, 2);
+   }
+   
+   @Test
+   public void shouldNotFireDeployDeploymentEventOnStartWhenNotManagedDeployment() throws Exception
+   {
+      DeploymentDescription description = new DeploymentDescription(DEPLOYMENT_NAME, ShrinkWrap.create(JavaArchive.class));
+      description.shouldBeManaged(false);
+      description.setTarget(new TargetDescription(MANUAL_SERVER_NAME));
+      scenario.get().addDeployment(description);
+      
+      controller.get().start(MANUAL_SERVER_NAME);
+      controller.get().start(MANUAL_SERVER_NAME, new Config().add("managementPort", "19999").map());
+      
+      assertEventFired(DeployDeployment.class, 0);
+   }
+   
+   @Test
+   public void shouldFireUnDeployDeploymentEventOnStopWhenManagedDeployment() throws Exception
+   {
+      DeploymentDescription description = new DeploymentDescription(DEPLOYMENT_NAME, ShrinkWrap.create(JavaArchive.class));
+      description.shouldBeManaged(true);
+      description.setTarget(new TargetDescription(MANUAL_SERVER_NAME));
+      scenario.get().addDeployment(description);
+      controller.get().start(MANUAL_SERVER_NAME);
+      scenario.get().deployment(new DeploymentTargetDescription(DEPLOYMENT_NAME)).deployed();
+      
+      controller.get().stop(MANUAL_SERVER_NAME);
+      
+      assertEventFired(UnDeployDeployment.class, 1);
+   }
+   
+   @Test
+   public void shouldNotFireUnDeployDeploymentEventOnStopWhenNotManagedDeployment() throws Exception
+   {
+      DeploymentDescription description = new DeploymentDescription(DEPLOYMENT_NAME, ShrinkWrap.create(JavaArchive.class));
+      description.shouldBeManaged(false);
+      description.setTarget(new TargetDescription(MANUAL_SERVER_NAME));
+      scenario.get().addDeployment(description);
+      controller.get().start(MANUAL_SERVER_NAME);
+      scenario.get().deployment(new DeploymentTargetDescription(DEPLOYMENT_NAME)).deployed();
+      
+      controller.get().stop(MANUAL_SERVER_NAME);
+      
+      assertEventFired(UnDeployDeployment.class, 0);
    }
    
    @Test
